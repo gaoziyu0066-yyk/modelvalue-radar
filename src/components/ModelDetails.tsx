@@ -55,7 +55,9 @@ export function ModelDetails({ model, close }: { model: Model | null; close: () 
             </dd>
             <dt>{t('Catalog creation date', '目录创建日期')}</dt>
             <dd>
-              {model.created ? new Date(model.created * 1000).toISOString().slice(0, 10) : '—'}
+              {model.created !== null
+                ? new Date(model.created * 1000).toISOString().slice(0, 10)
+                : '—'}
             </dd>
           </dl>
           <h3>{t('Advertised API parameters', '目录声明的 API 参数')}</h3>

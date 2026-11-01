@@ -69,9 +69,18 @@ export function estimateCost(model: Model, workload: Workload): Estimate {
   const input =
     workload.input * ((1 - workload.cache) * model.pricing.input + workload.cache * cachedRate)
   const perCall = input + workload.output * model.pricing.output + (model.pricing.request ?? 0)
+  const hasBilledUsage =
+    (workload.input > 0 &&
+      ((workload.cache < 1 && model.pricing.input > 0) ||
+        (workload.cache > 0 && cachedRate > 0))) ||
+    (workload.output > 0 && model.pricing.output > 0) ||
+    (model.pricing.request ?? 0) > 0
   const daily = perCall * dailyCalls
   const monthly = daily * workload.days
-  if (![perCall, daily, monthly, monthly * 12].every(Number.isFinite))
+  if (
+    (perCall === 0 && hasBilledUsage) ||
+    ![perCall, daily, monthly, monthly * 12].every(Number.isFinite)
+  )
     return unavailable('numericOverflow')
   return { perCall, dailyCalls, monthlyCalls, daily, monthly, annual: monthly * 12, warnings }
 }
@@ -88,5 +97,6 @@ export function isFree(model: Model) {
 export function savings(baseline: number | null, alternative: number | null) {
   if (baseline === null || alternative === null) return null
   const amount = baseline - alternative
-  return { amount, percent: baseline > 0 ? (amount / baseline) * 100 : null }
+  const percent = baseline > 0 ? (amount / baseline) * 100 : null
+  return { amount, percent: percent !== null && Number.isFinite(percent) ? percent : null }
 }

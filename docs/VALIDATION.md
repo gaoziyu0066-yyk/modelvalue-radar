@@ -1,5 +1,7 @@
 # Verification record
 
+This file preserves the initial-release checks. The subsequent [engineering review](ENGINEERING_REVIEW.zh-CN.md) records expanded coverage and fixes; its results supersede the initial counts below.
+
 Recorded for the initial local release on **2026-11-01 (Asia/Shanghai)**. These are executed local checks, not claims about an uncreated GitHub repository or a deployed service.
 
 ## Environment

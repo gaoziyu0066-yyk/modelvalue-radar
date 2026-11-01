@@ -65,6 +65,14 @@ export default function Explore({
   )
   const result = paginate(filtered, page)
   const providers = useMemo(() => [...new Set(models.map((m) => m.provider))].sort(), [models])
+  const modalities = useMemo(
+    () => [...new Set(models.flatMap((m) => m.inputModalities))].sort(),
+    [models],
+  )
+  const parameters = useMemo(
+    () => [...new Set(models.flatMap((m) => m.parameters))].sort(),
+    [models],
+  )
   const scenarios = [
     { id: 'code', icon: Braces, label: t('Coding', '编写代码') },
     { id: 'chat', icon: MessageCircle, label: t('Everyday chat', '日常聊天') },
@@ -283,7 +291,7 @@ export default function Explore({
                   onChange={(e) => change({ modality: e.target.value })}
                 >
                   <option value="">{t('Any modality', '任意模态')}</option>
-                  {['text', 'image', 'audio', 'video', 'file'].map((x) => (
+                  {modalities.map((x) => (
                     <option key={x}>{x}</option>
                   ))}
                 </select>
@@ -295,13 +303,7 @@ export default function Explore({
                   onChange={(e) => change({ parameter: e.target.value })}
                 >
                   <option value="">{t('Any parameter', '任意参数')}</option>
-                  {[
-                    'tools',
-                    'structured_outputs',
-                    'response_format',
-                    'reasoning',
-                    'temperature',
-                  ].map((x) => (
+                  {parameters.map((x) => (
                     <option key={x}>{x}</option>
                   ))}
                 </select>
@@ -392,6 +394,7 @@ export default function Explore({
                 <button
                   key={sort}
                   className={filters.sort === sort ? 'active' : ''}
+                  aria-pressed={filters.sort === sort}
                   onClick={() => change({ sort: sort as Sort })}
                 >
                   {label}
@@ -455,7 +458,12 @@ export default function Explore({
             </div>
           ) : (
             <>
-              <div className="table-scroll">
+              <div
+                className="table-scroll"
+                tabIndex={0}
+                role="region"
+                aria-label={t('Scrollable model catalog', '可滚动模型目录')}
+              >
                 <table className="model-table">
                   <thead>
                     <tr>

@@ -2,6 +2,56 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_WORKLOAD, estimateCost, savings } from './cost'
 import { testModel } from '../test/fixtures'
 describe('independent cost examples', () => {
+  it('does not turn a positive charge into a zero bill when weighted rates underflow', () => {
+    const result = estimateCost(
+      { ...testModel, pricing: { input: Number.MIN_VALUE, output: 0, cacheRead: 0, request: 0 } },
+      { ...DEFAULT_WORKLOAD, input: 1, output: 0, cache: 0.5 },
+    )
+    expect(result.reason).toBe('numericOverflow')
+    expect(result.monthly).toBeNull()
+  })
+  it('accepts exact context/output limits and rejects one extra token', () => {
+    const model = { ...testModel, context: 1500, maxOutput: 500 }
+    expect(estimateCost(model, DEFAULT_WORKLOAD).monthly).toBeCloseTo(900)
+    expect(estimateCost(model, { ...DEFAULT_WORKLOAD, input: 1001 }).reason).toBe('contextExceeded')
+    expect(
+      estimateCost({ ...model, context: 2000 }, { ...DEFAULT_WORKLOAD, output: 501 }).reason,
+    ).toBe('outputExceeded')
+  })
+  it('uses a known zero cache-read rate and does not cap higher cache rates to a discount', () => {
+    const workload = { ...DEFAULT_WORKLOAD, cache: 1 }
+    expect(
+      estimateCost({ ...testModel, pricing: { ...testModel.pricing, cacheRead: 0 } }, workload)
+        .monthly,
+    ).toBeCloseTo(600)
+    expect(
+      estimateCost(
+        { ...testModel, pricing: { ...testModel.pricing, cacheRead: 0.000004 } },
+        workload,
+      ).monthly,
+    ).toBeCloseTo(1200)
+  })
+  it('still bills per-request fees for zero token requests', () => {
+    const result = estimateCost(
+      { ...testModel, pricing: { ...testModel.pricing, request: 0.001 } },
+      { ...DEFAULT_WORKLOAD, input: 0, output: 0 },
+    )
+    expect(result.monthly).toBeCloseTo(150)
+  })
+  it('keeps maximum supported call counts safe and annual periods explicit', () => {
+    const result = estimateCost(testModel, {
+      ...DEFAULT_WORKLOAD,
+      users: 1e8,
+      calls: 1e6,
+      days: 31,
+    })
+    expect(result.monthlyCalls).toBe(3.1e15)
+    expect(Number.isSafeInteger(result.monthlyCalls)).toBe(true)
+    expect(result.annual).toBe(result.monthly! * 12)
+  })
+  it('does not show infinite percentage savings from very small baselines', () => {
+    expect(savings(1e-300, 1e100)).toEqual({ amount: -1e100, percent: null })
+  })
   it('rejects numeric overflow rather than showing an infinite bill', () => {
     expect(
       estimateCost(

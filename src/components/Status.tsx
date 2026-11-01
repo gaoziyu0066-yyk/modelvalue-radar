@@ -1,12 +1,23 @@
 import { AlertCircle, ArrowUpRight, Database, RefreshCw, Upload } from 'lucide-react'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from './ui/button'
 import { useLocale } from '../hooks/useLocale'
 import type { useCatalog } from '../hooks/useCatalog'
+import { STALE_MS } from '../lib/catalog'
 export function CatalogStatus({ data }: { data: ReturnType<typeof useCatalog> }) {
   const { t, locale } = useLocale()
   const input = useRef<HTMLInputElement>(null)
-  const { catalog, loading, stale, error, cooldown } = data
+  const { catalog, loading, error, retryAt, updatedAt } = data
+  // Keep the clock here: ticking the data hook rerenders every chart and model row.
+  const [now, setNow] = useState(() => Date.now())
+  const currentTime = Math.max(now, updatedAt)
+  const cooldown = Math.max(0, Math.ceil((retryAt - currentTime) / 1000))
+  const stale = Boolean(catalog && currentTime - Date.parse(catalog.fetchedAt) >= STALE_MS)
+  const ticking = cooldown > 0
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), ticking ? 1000 : 60000)
+    return () => clearInterval(timer)
+  }, [ticking])
   return (
     <section className="catalog-status" aria-label={t('Data status', '数据状态')}>
       <div className="status-line">
@@ -32,6 +43,7 @@ export function CatalogStatus({ data }: { data: ReturnType<typeof useCatalog> })
             type="file"
             accept=".json,application/json"
             className="sr-only"
+            disabled={loading}
             aria-label={t('Import catalog JSON', '导入目录 JSON')}
             onChange={(e) => {
               const f = e.target.files?.[0]
@@ -68,8 +80,8 @@ export function CatalogStatus({ data }: { data: ReturnType<typeof useCatalog> })
       {!catalog && !loading && (
         <p className="status-note">
           {t(
-            'Load directly from OpenRouter into this tab, or import a catalog you have permission to use. Nothing is uploaded or stored on our servers.',
-            '直接从 OpenRouter 加载至此标签页，或导入你有权使用的目录。不会上传或保存到本站服务器。',
+            'Load directly from OpenRouter into this tab, or import a catalog you have permission to use. Catalog files and calculations stay in your browser.',
+            '直接从 OpenRouter 加载至此标签页，或导入你有权使用的目录。目录文件和计算均保留在浏览器中。',
           )}{' '}
           <a href="https://openrouter.ai/terms" target="_blank" rel="noreferrer">
             {t('Source terms', '来源条款')}

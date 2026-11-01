@@ -91,8 +91,8 @@ export default function Methodology() {
           </p>
           <p>
             {t(
-              'A direct API request exposes ordinary connection information to OpenRouter. Shared links include selected model IDs and workload quantities; they do not include API keys, prices or prompts. Link recipients load their own data.',
-              '直接 API 请求会向 OpenRouter 暴露普通连接信息。分享链接包含模型 ID 与用量数字，不含密钥、价格或提示词。接收者加载自己的数据。',
+              'A direct API request exposes ordinary connection information to OpenRouter. New share links keep model IDs and workload in the URL fragment (#), which is not sent to the host. Older query-based links still work but may appear in hosting logs. Links remain visible to recipients and browser history; they contain no keys, prices or prompts. Recipients load their own data.',
+              '直接 API 请求会向 OpenRouter 暴露普通连接信息。新分享链接将模型 ID 与用量放在 URL 的 # 片段中，不发送给托管服务器。旧查询参数链接仍可读取，但可能出现在托管日志中。链接对接收者和浏览器历史仍然可见，不含密钥、价格或提示词。接收者加载自己的数据。',
             )}
           </p>
           <p>

@@ -33,8 +33,12 @@ export default function Calculator({
     models.find((m) => selected.includes(m.id)) ??
     sorted.find(
       (m) =>
-        m.inputModalities.includes('text') && m.pricing.input !== null && m.pricing.output !== null,
-    )
+        m.inputModalities.includes('text') &&
+        m.outputModalities.includes('text') &&
+        m.pricing.input !== null &&
+        m.pricing.output !== null,
+    ) ??
+    sorted[0]
   const estimate = model ? estimateCost(model, workload) : null
   const alternatives = model
     ? models
@@ -103,7 +107,12 @@ export default function Calculator({
                 </label>
                 <div className="monthly-estimate">
                   <span>{t('Estimated monthly cost', '预估月度费用')}</span>
-                  <strong data-testid="monthly-cost">{money(estimate.monthly)}</strong>
+                  <strong
+                    data-testid="monthly-cost"
+                    className={money(estimate.monthly).length > 14 ? 'long-amount' : undefined}
+                  >
+                    {money(estimate.monthly)}
+                  </strong>
                   <small>
                     {compact(estimate.monthlyCalls)} {t('calls over', '次调用 /')} {workload.days}{' '}
                     {t('days', '天')}

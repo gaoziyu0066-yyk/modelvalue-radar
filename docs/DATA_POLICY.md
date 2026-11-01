@@ -2,6 +2,8 @@
 
 Reviewed during implementation on **2026-11-01**. This is a record of engineering constraints, not a legal interpretation or a grant of rights.
 
+Rechecked during the release-readiness review on the same date: the official terms page identifies its last update as August 31, 2026; no blanket model-directory redistribution grant was established. A new metadata-only health check passed with 452 models and zero rejected records. Current API documentation says the default response selects text-output models; the app describes and filters the returned catalog, not an exhaustive inventory of every modality on the service.
+
 ## Sources reviewed
 
 - [Official model endpoint reference](https://openrouter.ai/docs/api/api-reference/models/get-models)
@@ -46,6 +48,8 @@ No backend, storage bucket, analytics, key or persistent full-catalog cache is u
 `check-data.yml` is disabled unless `ENABLE_CATALOG_CHECK=true`. It makes one validation request per enabled run and saves metadata only: status, counts, timestamp or failure reason. Six-hour scheduling and manual dispatch are supported. A failed run exits nonzero and still uploads its report. Earlier successful Actions runs remain the record of prior successful checks. Neither successful nor failed checks alter a deployed site, publish prices or commit a directory.
 
 Browser freshness and Actions check history are separate. A green scheduled check does not prove a visitor's tab has refreshed. There is no second-by-second market feed claim and no synthetic price history.
+
+Imports and API refreshes now share one concurrency lock. Imports show a busy state, cannot race a refresh, and never trigger scheduled replacement. Countdown rendering is local to the status component, so it does not redraw the entire catalog and charts each second. New comparison URLs place workload in a fragment; older query links are still parsed. No-referrer is set both in the document and the API request.
 
 ## Non-text and advanced charges
 

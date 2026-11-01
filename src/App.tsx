@@ -15,9 +15,12 @@ const Insights = lazy(() => import('./pages/Insights'))
 const Methodology = lazy(() => import('./pages/Methodology'))
 function Workspace({ locale, setLocale }: { locale: Locale; setLocale: (v: Locale) => void }) {
   const { t } = useLocale()
-  const [theme, setTheme] = useState(() => safeRead('mvr-theme', 'dark'))
+  const [theme, setTheme] = useState(() =>
+    safeRead('mvr-theme', 'dark') === 'light' ? 'light' : 'dark',
+  )
   const [page, setPage] = useState<Page>(() => readPage(location.hash))
-  const [initial] = useState(() => readShare(location.search))
+  const [initial] = useState(() => readShare(location.search, location.hash))
+  const [shareError, setShareError] = useState(initial.error)
   const [selected, setSelected] = useState(initial.models)
   const [workload, setWorkload] = useState(initial.workload)
   const [detail, setDetail] = useState<Model | null>(null)
@@ -29,7 +32,17 @@ function Workspace({ locale, setLocale }: { locale: Locale; setLocale: (v: Local
     window.scrollTo({ top: 0 })
   }
   useEffect(() => {
-    const update = () => setPage(readPage(location.hash))
+    const update = () => {
+      setPage(readPage(location.hash))
+      if (location.hash.includes('?')) {
+        const state = readShare('', location.hash)
+        setSelected(state.models)
+        setWorkload(state.workload)
+        setShareError(state.error)
+      }
+      document.getElementById('main-content')?.focus({ preventScroll: true })
+      window.scrollTo({ top: 0 })
+    }
     window.addEventListener('hashchange', update)
     return () => window.removeEventListener('hashchange', update)
   }, [])
@@ -42,8 +55,24 @@ function Workspace({ locale, setLocale }: { locale: Locale; setLocale: (v: Local
     safeWrite('mvr-locale', locale)
   }, [locale])
   useEffect(() => {
-    document.title = `${{ explore: 'Explore models', calculator: 'Cost calculator', compare: 'Compare models', insights: 'Price insights', methodology: 'Methodology' }[page]} · ModelValue Radar`
-  }, [page])
+    const titles =
+      locale === 'zh'
+        ? {
+            explore: '发现模型',
+            calculator: '成本计算器',
+            compare: '模型对比',
+            insights: '价格洞察',
+            methodology: '数据与方法',
+          }
+        : {
+            explore: 'Explore models',
+            calculator: 'Cost calculator',
+            compare: 'Compare models',
+            insights: 'Price insights',
+            methodology: 'Methodology',
+          }
+    document.title = `${titles[page]} · ModelValue Radar`
+  }, [page, locale])
   const toggle = (id: string) =>
     setSelected((current) =>
       current.includes(id)
@@ -127,7 +156,7 @@ function Workspace({ locale, setLocale }: { locale: Locale; setLocale: (v: Local
         </div>
       </header>
       <main id="main-content" tabIndex={-1} className="site-main">
-        {initial.error && (
+        {shareError && (
           <div className="notice error" role="alert">
             {t(
               'This share link is invalid. Default settings have been restored.',
@@ -166,6 +195,7 @@ function Workspace({ locale, setLocale }: { locale: Locale; setLocale: (v: Local
               setSelected={setSelected}
               workload={workload}
               fetchedAt={data.catalog?.fetchedAt}
+              source={data.catalog?.source}
             />
           ) : page === 'insights' ? (
             <Insights models={models} workload={workload} selected={selected} />

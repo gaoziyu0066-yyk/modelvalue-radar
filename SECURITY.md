@@ -12,6 +12,8 @@ Include the affected version, impact, reproducible steps and a minimal proof of 
 
 - Imported JSON is limited to 10 MB and runtime validated. Names render as React text, not HTML. External source links are built under the fixed OpenRouter origin.
 - Share URLs are versioned, size-limited, bounded to three IDs, and validated before use. They disclose selected model IDs and workload quantities to recipients; do not put sensitive quantities into public links.
+- New share state is fragment-only, avoiding hosting query logs. Legacy query URLs still restore and may already have been logged by a host; recipients/browser history can see either format. Page and API requests use a no-referrer policy.
+- Metadata arrays are bounded and deduplicated. Nonzero decimal strings that underflow, and prices whose per-million conversion overflows, become unknown rather than free or infinite chart values. No raw HTML is rendered from imports.
 - Browser local storage contains language and theme only. Catalogs remain in memory. The source API still receives connection metadata from direct requests.
 - `VITE_` variables are public. Never add API keys. If the API starts requiring authentication, keep the error/manual-import fallback or design a separately reviewed server integration.
 - Actions use read-only repository permission except the dedicated Pages deployment job. Pull requests must not execute with repository secrets. Catalog checking is opt-in and does not write to the repository.

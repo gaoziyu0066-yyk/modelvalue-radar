@@ -5,15 +5,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 export const compact = (value: number) =>
   new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value)
-export const money = (value: number | null, digits = 2) =>
-  value === null || !Number.isFinite(value)
-    ? '—'
-    : new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits,
-      }).format(value)
+export function money(value: number | null, digits = 2) {
+  if (value === null || !Number.isFinite(value)) return '—'
+  const magnitude = Math.abs(value)
+  // Huge estimates cannot promise cent precision in a JavaScript number.
+  if (magnitude >= 1e12) return `≈${value < 0 ? '-' : ''}$${magnitude.toExponential(3)}`
+  if (magnitude > 0 && magnitude < 1e-8)
+    return `${value < 0 ? '-' : ''}$${magnitude.toExponential(2)}`
+  const precision =
+    magnitude > 0 && magnitude < 10 ** -digits
+      ? Math.max(digits, Math.ceil(-Math.log10(magnitude)) + 1)
+      : digits
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision,
+  }).format(value)
+}
 export function tokenPrice(value: number | null) {
   if (value === null) return '—'
   const perMillion = value * 1e6

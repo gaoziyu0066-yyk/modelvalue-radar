@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Copy, Link, Plus, X } from 'lucide-react'
-import type { Model, Workload } from '../types/model'
+import type { Catalog, Model, Workload } from '../types/model'
 import { useLocale } from '../hooks/useLocale'
 import { estimateCost, savings, workloadSchema } from '../lib/cost'
 import { shareUrl } from '../lib/share'
@@ -9,15 +9,25 @@ import { ModelIdentity } from '../components/ModelIdentity'
 import { Button } from '../components/ui/button'
 import { CostChart } from '../components/Charts'
 import { CostNotes, EstimateDisclaimer } from '../components/CostNotes'
+import { useCostLabels } from '../hooks/useCostLabels'
 interface Props {
   models: Model[]
   selected: string[]
   setSelected: (ids: string[]) => void
   workload: Workload
   fetchedAt?: string
+  source?: Catalog['source']
 }
-export default function Compare({ models, selected, setSelected, workload, fetchedAt }: Props) {
+export default function Compare({
+  models,
+  selected,
+  setSelected,
+  workload,
+  fetchedAt,
+  source,
+}: Props) {
   const { t } = useLocale()
+  const labels = useCostLabels()
   const chosen = selected.flatMap((id) => {
     const model = models.find((m) => m.id === id)
     return model ? [model] : []
@@ -44,12 +54,19 @@ export default function Compare({ models, selected, setSelected, workload, fetch
   const resultText = () =>
     [
       'ModelValue Radar — text-token estimate (USD)',
+      source === 'import'
+        ? 'Source: local import; source authenticity and age unverified. OpenRouter links are references only.'
+        : 'Source: OpenRouter API; provider claims are not independently verified.',
       `Retrieved: ${fetchedAt ?? 'unknown'}; not a price-change timestamp.`,
       `Workload: ${JSON.stringify(workload)}`,
-      ...chosen.map(
-        (m, i) =>
-          `${m.name} | input ${tokenPrice(m.pricing.input)}/1M | output ${tokenPrice(m.pricing.output)}/1M | monthly ${money(costs[i]?.monthly ?? null)} | ${m.sourceUrl}`,
-      ),
+      ...chosen.map((m, i) => {
+        const cost = costs[i]
+        const notes = [
+          ...(cost?.reason ? [labels[cost.reason]] : []),
+          ...(cost?.warnings.map((w) => labels[w]) ?? []),
+        ]
+        return `${m.name} | input ${tokenPrice(m.pricing.input)}/1M | output ${tokenPrice(m.pricing.output)}/1M | monthly ${money(cost?.monthly ?? null)} | ${m.sourceUrl}\n${notes.join(' ')}`
+      }),
       'Excludes tiers, cache writes, media, tools, taxes and platform fees. See model-specific warnings in the app.',
       shareUrl({ models: selected, workload }),
     ].join('\n')
@@ -119,9 +136,13 @@ export default function Compare({ models, selected, setSelected, workload, fetch
     {
       label: t('Data source', '数据来源'),
       value: (m) => (
-        <a href={m.sourceUrl} target="_blank" rel="noreferrer">
-          OpenRouter ↗
-        </a>
+        <>
+          {source === 'import' && <p>{t('Local import · unverified', '本地导入 · 未验证')}</p>}
+          <a href={m.sourceUrl} target="_blank" rel="noreferrer">
+            {source === 'import' ? t('OpenRouter reference', 'OpenRouter 参考链接') : 'OpenRouter'}{' '}
+            ↗
+          </a>
+        </>
       ),
     },
   ]
@@ -169,6 +190,11 @@ export default function Compare({ models, selected, setSelected, workload, fetch
           value={manualCopy}
           onFocus={(e) => e.target.select()}
         />
+      )}
+      {!validWorkload && (
+        <p className="notice error" role="alert">
+          {labels.invalidWorkload} <a href="#calculator">{t('Edit workload', '编辑工作负载')}</a>
+        </p>
       )}
       {!!missing.length && (
         <div className="notice">
@@ -265,7 +291,12 @@ export default function Compare({ models, selected, setSelected, workload, fetch
               <CostChart models={chosen} workload={workload} />
             </div>
           </div>
-          <div className="panel table-scroll">
+          <div
+            className="panel table-scroll"
+            tabIndex={0}
+            role="region"
+            aria-label={t('Scrollable model comparison', '可滚动模型对比表')}
+          >
             <table className="comparison-table">
               <caption className="sr-only">{t('Model comparison details', '模型详细对比')}</caption>
               <thead>

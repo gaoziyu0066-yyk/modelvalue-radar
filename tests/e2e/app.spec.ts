@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { rawTestModel } from '../../src/test/fixtures'
 import { DEFAULT_WORKLOAD } from '../../src/lib/cost'
+import { shareUrl } from '../../src/lib/share'
 const endpoint = 'https://openrouter.ai/api/v1/models'
 const fixture = {
   data: [
@@ -94,7 +95,9 @@ test('shares IDs and workload, restores them, and handles clipboard denial', asy
   await page.getByRole('button', { name: 'Share comparison', exact: true }).click()
   const link = await page.getByRole('textbox', { name: 'Copy manually' }).inputValue()
   expect(link).not.toContain('0.000002')
+  expect(new URL(link).search).toBe('')
   await page.goto(link)
+  await page.reload()
   await page.getByRole('button', { name: 'Load official catalog', exact: true }).click()
   await expect(page.locator('.compare-slots')).toContainText('TEST ONLY Alpha')
   await expect(
@@ -186,6 +189,17 @@ test('layout remains within viewport on all main pages', async ({ page }) => {
     await page.evaluate((value) => {
       location.hash = value
     }, hash)
+    await expect(page).toHaveTitle(
+      new RegExp(
+        {
+          explore: 'Explore models',
+          calculator: 'Cost calculator',
+          compare: 'Compare models',
+          insights: 'Price insights',
+          methodology: 'Methodology',
+        }[hash]!,
+      ),
+    )
     await expect(page.locator('main h1')).toBeVisible()
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
@@ -193,14 +207,25 @@ test('layout remains within viewport on all main pages', async ({ page }) => {
   }
 })
 for (const theme of ['dark', 'light']) {
-  test(`axe WCAG AA checks for ${theme} discovery, calculator and comparison`, async ({ page }) => {
+  test(`axe WCAG AA checks for all five pages in ${theme}`, async ({ page }) => {
     await load(page)
     if (theme === 'light') await page.getByRole('button', { name: 'Toggle color theme' }).click()
     await page.getByRole('button', { name: 'Compare TEST ONLY Alpha', exact: true }).click()
-    for (const hash of ['explore', 'calculator', 'compare']) {
+    for (const hash of ['explore', 'calculator', 'compare', 'insights', 'methodology']) {
       await page.evaluate((value) => {
         location.hash = value
       }, hash)
+      await expect(page).toHaveTitle(
+        new RegExp(
+          {
+            explore: 'Explore models',
+            calculator: 'Cost calculator',
+            compare: 'Compare models',
+            insights: 'Price insights',
+            methodology: 'Methodology',
+          }[hash]!,
+        ),
+      )
       await expect(page.locator('main h1')).toBeVisible()
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
@@ -214,3 +239,259 @@ for (const theme of ['dark', 'light']) {
     }
   })
 }
+
+test('all scenario rules, sorts and hard filters respond to controls', async ({ page }) => {
+  await load(page)
+  for (const [name, count] of [
+    ['Coding', 8],
+    ['Everyday chat', 14],
+    ['Long documents', 8],
+    ['Batch processing', 8],
+    ['Image understanding', 14],
+    ['Budget first', 14],
+  ] as const) {
+    await page.getByRole('button', { name, exact: true }).click()
+    await expect(page.getByText(`${count} matching models`)).toBeVisible()
+    await page.getByRole('button', { name, exact: true }).click()
+  }
+  for (const sort of ['input', 'output', 'cost', 'context', 'newest', 'match']) {
+    await page.getByLabel('Sort models', { exact: true }).selectOption(sort)
+    await expect(page.locator('.model-table tbody tr')).toHaveCount(10)
+    if (['input', 'output', 'cost'].includes(sort))
+      await expect(page.locator('.model-table tbody tr').first()).toContainText('TEST ONLY Model 1')
+  }
+  await page.getByRole('button', { name: 'Filters', exact: true }).click()
+  await page.getByLabel('Provider', { exact: true }).selectOption('test')
+  await page.getByRole('combobox', { name: 'Input modality', exact: true }).selectOption('image')
+  await page.getByRole('combobox', { name: 'API parameter', exact: true }).selectOption('tools')
+  await page.getByRole('combobox', { name: 'Minimum context', exact: true }).selectOption('200000')
+  await page.getByLabel('Max input $ / 1M', { exact: true }).fill('3')
+  await page.getByLabel('Max output $ / 1M', { exact: true }).fill('0')
+  await expect(page.locator('.model-table tbody tr')).toHaveCount(1)
+  await page.getByRole('slider', { name: /Preference weighting/ }).fill('0')
+  await expect(page.getByLabel('Sort models')).toHaveValue('match')
+  await page.getByRole('button', { name: 'Reset filters', exact: true }).click()
+  await expect(page.getByText('14 matching models')).toBeVisible()
+})
+
+test('keyboard navigation, localized titles and invalid fields remain usable', async ({ page }) => {
+  await load(page)
+  await page.getByRole('navigation').getByRole('link', { name: 'Calculator', exact: true }).focus()
+  await page.keyboard.press('Enter')
+  await expect(page.locator('main')).toBeFocused()
+  await page.getByLabel('Days / month', { exact: false }).fill('')
+  await expect(page.getByLabel('Days / month', { exact: false })).toHaveAttribute(
+    'aria-invalid',
+    'true',
+  )
+  await page.getByRole('button', { name: 'Reset', exact: true }).click()
+  await expect(page.getByTestId('monthly-cost')).toHaveText('$900.00')
+  await page.getByRole('button', { name: '切换为中文' }).click()
+  await expect(page).toHaveTitle('成本计算器 · ModelValue Radar')
+  await page.getByRole('navigation').getByRole('link', { name: '洞察', exact: true }).click()
+  await expect(page).toHaveTitle('价格洞察 · ModelValue Radar')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('换个视角')
+})
+
+test('non-text-only and unknown-price catalogs remain selectable with explicit reasons', async ({
+  page,
+}) => {
+  await page.route(endpoint, (route) =>
+    route.fulfill({
+      json: {
+        data: [
+          {
+            ...rawTestModel,
+            id: 'test/audio',
+            name: 'TEST ONLY Audio',
+            architecture: { input_modalities: ['text'], output_modalities: ['audio'] },
+          },
+          { ...rawTestModel, id: 'test/unknown', name: 'TEST ONLY Unknown', pricing: {} },
+        ],
+      },
+    }),
+  )
+  await page.goto('/#calculator')
+  await page.getByRole('button', { name: 'Load official catalog', exact: true }).click()
+  await expect(page.getByLabel('Calculate for model')).toBeVisible()
+  await expect(page.getByText('Text-token estimate unavailable for this modality.')).toBeVisible()
+  await page.getByLabel('Calculate for model').selectOption('test/unknown')
+  await expect(page.getByText('Token price is missing or dynamic.')).toBeVisible()
+  await expect(page.getByTestId('monthly-cost')).toHaveText('—')
+})
+
+test('copied imported comparisons retain provenance and cache warnings', async ({ page }) => {
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: () => Promise.reject(new Error('denied')) },
+    }),
+  )
+  await page.goto('/#compare')
+  await page.getByLabel('Import catalog JSON').setInputFiles({
+    name: 'test.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(fixture)),
+  })
+  await page.getByLabel('Add model 1', { exact: true }).selectOption('test/model-2')
+  await page.getByRole('link', { name: /^Edit workload/ }).click()
+  await page.getByRole('slider', { name: /Input cache hit rate/ }).fill('100')
+  await page
+    .getByRole('navigation')
+    .getByRole('link', { name: /^Compare/ })
+    .click()
+  await page.getByRole('button', { name: 'Copy results', exact: true }).click()
+  const copy = page.getByRole('textbox', { name: 'Copy manually' })
+  await expect(copy).toContainText('Source: local import; source authenticity and age unverified')
+  await expect(copy).toContainText('Cache-read price missing')
+  await expect(page.getByRole('rowheader', { name: 'Data source' }).locator('..')).toContainText(
+    'Local import · unverified',
+  )
+})
+
+test('charts load on demand, tooltips and shortlist data stay accessible', async ({ page }) => {
+  const chartRequests: string[] = []
+  page.on('request', (request) => {
+    if (/\/Charts[.-]/.test(request.url())) chartRequests.push(request.url())
+  })
+  await load(page)
+  expect(chartRequests).toHaveLength(0)
+  await page.getByRole('button', { name: 'Compare TEST ONLY Alpha', exact: true }).click()
+  await page.getByRole('navigation').getByRole('link', { name: 'Insights', exact: true }).click()
+  await expect(page.locator('.scatter-chart .recharts-scatter-symbol')).not.toHaveCount(0)
+  expect(chartRequests.length).toBeGreaterThan(0)
+  await page.locator('.scatter-chart .recharts-scatter-symbol').last().hover({ force: true })
+  await expect(page.locator('.chart-tooltip')).toBeVisible()
+  await expect(page.locator('.chart-tooltip')).toContainText('Input')
+  await page.getByLabel('Max input $ / 1M', { exact: true }).fill('0')
+  await expect(page.getByLabel('Shortlist monthly estimates')).toContainText('$900.00')
+  await page.getByLabel('Max input $ / 1M', { exact: true }).fill('10')
+  await page.getByText('Accessible chart data', { exact: false }).click()
+  await expect(page.locator('.comparison-table')).toContainText('$900.00')
+})
+
+test('long imported names and extreme valid workloads fit every viewport', async ({
+  page,
+}, testInfo) => {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.route(endpoint, (route) =>
+    route.fulfill({
+      json: {
+        data: [
+          {
+            ...rawTestModel,
+            name: 'TEST ONLY ' + 'LongName'.repeat(50),
+            pricing: { ...rawTestModel.pricing, request: '10000000' },
+          },
+        ],
+      },
+    }),
+  )
+  await page.goto('/#calculator')
+  await page.getByRole('button', { name: 'Load official catalog', exact: true }).click()
+  await page.getByLabel('Daily active users', { exact: false }).fill('100000000')
+  await page.getByLabel('Calls / user / day', { exact: false }).fill('1000000')
+  await expect(page.getByTestId('monthly-cost')).not.toHaveText('—')
+  await expect(page.getByTestId('monthly-cost')).toHaveText('≈$3.000e+22')
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    .toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('extreme-calculator.png'), fullPage: true })
+  await page
+    .getByRole('navigation')
+    .getByRole('link', { name: /^Compare/ })
+    .click()
+  await page.getByLabel('Add model 1', { exact: true }).selectOption('test/alpha')
+  await expect(page.locator('.chart .recharts-wrapper')).toHaveCount(2)
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    .toBe(true)
+  expect(errors).toEqual([])
+})
+
+test('review screenshots cover loaded pages in both languages and themes', async ({
+  page,
+}, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await load(page)
+  await page.getByRole('button', { name: 'Compare TEST ONLY Alpha', exact: true }).click()
+  await page.getByRole('button', { name: 'Compare models', exact: true }).click()
+  await expect(page.locator('.chart .recharts-wrapper')).toHaveCount(2)
+  await page.screenshot({ path: testInfo.outputPath('compare-dark.png'), fullPage: true })
+  await page.getByRole('button', { name: 'Toggle color theme' }).click()
+  await page.getByRole('button', { name: '切换为中文' }).click()
+  await page.screenshot({ path: testInfo.outputPath('compare-light-zh.png'), fullPage: true })
+})
+
+test('fragment shares restore in the same tab without sending workload to the host', async ({
+  page,
+}) => {
+  const documentUrls: string[] = []
+  page.on('request', (request) => {
+    if (request.resourceType() === 'document') documentUrls.push(request.url())
+  })
+  await load(page)
+  const link = shareUrl(
+    { models: ['test/alpha'], workload: { ...DEFAULT_WORKLOAD, users: 37 } },
+    page.url(),
+  )
+  await page.goto(link)
+  await expect(page.locator('.comparison-workload')).toContainText('37 users')
+  await expect(page.locator('.comparison-table')).toContainText('$33.30')
+  await page.reload()
+  await page.getByRole('button', { name: 'Load official catalog', exact: true }).click()
+  await expect(page.locator('.comparison-table')).toContainText('$33.30')
+  expect(documentUrls.every((url) => !new URL(url).searchParams.has('s'))).toBe(true)
+  await expect(page.locator('meta[name="referrer"]')).toHaveAttribute('content', 'no-referrer')
+})
+
+test('untrusted imported names are text, filter parameters come from the catalog', async ({
+  page,
+}) => {
+  const name = 'TEST ONLY <img src=x onerror="window.__xss=1">'
+  await page.goto('/')
+  await page.getByLabel('Import catalog JSON').setInputFiles({
+    name: 'test.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        data: [
+          {
+            ...rawTestModel,
+            name,
+            supported_parameters: ['custom_parameter', 'custom_parameter'],
+          },
+        ],
+      }),
+    ),
+  })
+  await expect(page.locator('.model-name-button')).toContainText(name)
+  expect(await page.locator('.model-name-button img').count()).toBe(0)
+  await page.getByRole('button', { name: 'Filters', exact: true }).click()
+  await page
+    .getByRole('combobox', { name: 'API parameter', exact: true })
+    .selectOption('custom_parameter')
+  await expect(page.locator('.model-table tbody tr')).toHaveCount(1)
+  await page.locator('.model-name-button').click()
+  await expect(page.getByRole('dialog').locator('.tag')).toHaveCount(1)
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(results.violations).toEqual([])
+})
+
+test('horizontal comparison data can be scrolled with the keyboard', async ({ page }) => {
+  await load(page)
+  const buttons = page.locator('.model-table button[aria-pressed="false"]')
+  for (let i = 0; i < 3; i++) await buttons.first().click()
+  await page.getByRole('button', { name: 'Compare models', exact: true }).click()
+  const region = page.getByRole('region', { name: 'Scrollable model comparison' })
+  await region.focus()
+  await expect(region).toBeFocused()
+  const canScroll = await region.evaluate((el) => el.scrollWidth > el.clientWidth)
+  if (canScroll) {
+    await page.keyboard.press('ArrowRight')
+    await expect.poll(() => region.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0)
+  }
+})

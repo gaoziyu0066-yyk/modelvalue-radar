@@ -69,6 +69,7 @@ export function WorkloadForm({
             min={min}
             max={max}
             step="1"
+            aria-invalid={!Number.isInteger(value[key]) || value[key] < min || value[key] > max}
             value={Number.isNaN(value[key]) ? '' : value[key]}
             onChange={(e) =>
               onChange({ ...value, [key]: e.target.value === '' ? NaN : Number(e.target.value) })

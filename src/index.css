@@ -748,6 +748,7 @@ nav a.active:after {
   font-size: 10px;
 }
 .table-scroll {
+  position: relative;
   width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -1109,6 +1110,7 @@ th small {
   color: var(--accent);
 }
 .calculator-results {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -1137,6 +1139,7 @@ th small {
   color: var(--muted);
 }
 .monthly-estimate > strong {
+  overflow-wrap: anywhere;
   font-size: 52px;
   letter-spacing: -2px;
   color: var(--accent);
@@ -1146,6 +1149,10 @@ th small {
 .monthly-estimate > small {
   font-size: 10px;
   color: var(--faint);
+}
+.monthly-estimate > strong.long-amount {
+  font-size: clamp(26px, 3vw, 38px);
+  letter-spacing: -1px;
 }
 .cost-grid {
   display: grid;
@@ -1160,6 +1167,7 @@ th small {
   margin-bottom: 7px;
 }
 .cost-grid strong {
+  overflow-wrap: anywhere;
   font-size: 14px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
@@ -1319,6 +1327,13 @@ th small {
 .chart-tooltip {
   padding: 12px;
   max-width: 300px;
+  overflow-wrap: anywhere;
+}
+.shortlist-data {
+  display: grid;
+  gap: 16px;
+  margin: 16px 0;
+  overflow-wrap: anywhere;
 }
 .chart-tooltip p {
   margin: 4px 0 0;

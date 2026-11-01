@@ -53,3 +53,12 @@
 - Initially retained the original workspace when the chat directory changed. On the user's subsequent explicit instruction, moved the complete repository and its sibling `.tooling` directory to `D:\OneDrive\Documents\ChatGPT\My GitHub`. File inventories and sizes matched before and after the move; the original project and tooling directories are absent. Existing mathematics materials were preserved.
 - Final production-subpath check and local documentation-link checks passed; staged implementation and test changes were saved in local Git commits. Formatting and whitespace checks passed before release packaging.
 - After relocation, production build and all 64 unit/component tests passed again; `git fsck --full` passed. No project references were found in the remaining mathematics files.
+
+## Release-readiness engineering review — 2026-11-01
+
+- Reviewed data/cost boundaries, all pages and interactions, privacy, keyboard accessibility, lazy charts, workflow permissions and documentation.
+- Fixed import/refresh concurrency, whole-workspace timer rerenders, price/fee underflow and display precision, tablet overflow, import provenance, incomplete calculator selection and inaccessible filtered chart totals.
+- New share links use URL fragments, with same-tab restoration and legacy-query compatibility. Added no-referrer policy, localized titles, explicit input validity and keyboard-scrollable data regions.
+- Final checks: 94 unit/component tests passed; 72 E2E tests passed across exact 375px, 768px and 1440px widths; all-five-page dark/light axe scans passed. Cost lines 100%, lib lines 93.19%.
+- Production build and Pages subpath smoke passed. Live source check: 452 models, zero rejected. Full dependency audit: zero reported vulnerabilities.
+- Added `docs/ENGINEERING_REVIEW.zh-CN.md` and four explicitly synthetic review screenshots. Public source permissions, real hosted deployment, Safari/Firefox/physical devices and human screen-reader validation remain external release gates. No remote push or deployment performed.

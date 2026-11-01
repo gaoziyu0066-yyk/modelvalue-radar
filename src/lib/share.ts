@@ -10,8 +10,9 @@ export interface ShareState {
   models: string[]
   workload: Workload
 }
-export function readShare(search: string): ShareState & { error: boolean } {
-  const encoded = new URLSearchParams(search).get('s')
+export function readShare(search: string, hash = ''): ShareState & { error: boolean } {
+  const fragment = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
+  const encoded = new URLSearchParams(fragment).get('s') ?? new URLSearchParams(search).get('s')
   if (!encoded) return { models: [], workload: DEFAULT_WORKLOAD, error: false }
   try {
     if (encoded.length > 4000) throw new Error('Oversized state')
@@ -25,12 +26,12 @@ export function shareUrl(state: ShareState, href = window.location.href): string
   const url = new URL(href)
   const value = stateSchema.parse({ v: 1, ...state })
   url.search = ''
-  url.searchParams.set('s', JSON.stringify(value))
-  url.hash = 'compare'
+  // Fragments stay in the browser instead of reaching hosting access logs.
+  url.hash = `compare?${new URLSearchParams({ s: JSON.stringify(value) })}`
   return url.toString()
 }
 export function readPage(hash: string): Page {
-  const page = hash.replace(/^#\/?/, '')
+  const page = hash.replace(/^#\/?/, '').split('?')[0] ?? ''
   return ['explore', 'calculator', 'compare', 'insights', 'methodology'].includes(page)
     ? (page as Page)
     : 'explore'

@@ -9,11 +9,11 @@ export const rawModelSchema = z.object({
   created: z.number().int().nonnegative().max(253402300799).nullish(),
   architecture: z
     .object({
-      input_modalities: z.array(z.string()).default([]),
-      output_modalities: z.array(z.string()).default([]),
+      input_modalities: z.array(z.string().max(100)).max(64).default([]),
+      output_modalities: z.array(z.string().max(100)).max(64).default([]),
     })
     .nullish(),
-  supported_parameters: z.array(z.string()).nullish(),
+  supported_parameters: z.array(z.string().max(200)).max(256).nullish(),
   top_provider: z
     .object({ max_completion_tokens: z.number().int().positive().nullish() })
     .nullish(),
@@ -24,7 +24,11 @@ export function parsePrice(value: unknown): number | null {
   if (typeof value === 'string' && !/^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(value.trim()))
     return null
   const number = Number(value)
-  return Number.isFinite(number) && number >= 0 ? number : null
+  // Nonzero decimal strings can underflow to 0; never turn them into free prices.
+  if (number === 0 && typeof value === 'string' && /[1-9]/.test(value.trim().split(/e/i)[0]!))
+    return null
+  // Every rate must also be representable in the displayed USD / million unit.
+  return Number.isFinite(number * 1e6) && number >= 0 ? number : null
 }
 export function parseCatalog(
   raw: unknown,
@@ -51,9 +55,9 @@ export function parseCatalog(
       context: m.context_length ?? null,
       maxOutput: m.top_provider?.max_completion_tokens ?? null,
       created: m.created ?? null,
-      inputModalities: m.architecture?.input_modalities ?? [],
-      outputModalities: m.architecture?.output_modalities ?? [],
-      parameters: m.supported_parameters ?? [],
+      inputModalities: [...new Set(m.architecture?.input_modalities ?? [])],
+      outputModalities: [...new Set(m.architecture?.output_modalities ?? [])],
+      parameters: [...new Set(m.supported_parameters ?? [])],
       pricing: {
         input: parsePrice(p.prompt),
         output: parsePrice(p.completion),
@@ -92,6 +96,7 @@ export const openRouterProvider: DataProvider = {
         ? AbortSignal.any([signal, AbortSignal.timeout(20000)])
         : AbortSignal.timeout(20000),
       credentials: 'omit',
+      referrerPolicy: 'no-referrer',
       cache: 'no-store',
     })
     if (!response.ok) {

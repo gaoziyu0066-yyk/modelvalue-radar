@@ -9,6 +9,41 @@ const free = {
 }
 const unknown = { ...testModel, id: 'test/unknown', pricing: { ...testModel.pricing, input: null } }
 describe('filters and deterministic ranking', () => {
+  it.each(['input', 'output', 'newest', 'context'] as const)(
+    'sorts %s with missing metadata last and stable ID ties',
+    (sort) => {
+      const missing = {
+        ...unknown,
+        created: null,
+        context: null,
+        pricing: { ...unknown.pricing, output: null },
+      }
+      const b = { ...testModel, id: 'test/beta' }
+      const input = [missing, b, testModel]
+      expect(
+        filterModels(input, { ...DEFAULT_FILTERS, sort }, DEFAULT_WORKLOAD).map((m) => m.id),
+      ).toEqual(['test/alpha', 'test/beta', 'test/unknown'])
+      expect(input.map((m) => m.id)).toEqual(['test/unknown', 'test/beta', 'test/alpha'])
+    },
+  )
+  it('applies output price and provider filters including explicit zero', () => {
+    expect(
+      filterModels(
+        [free, testModel],
+        { ...DEFAULT_FILTERS, provider: 'test', maxOutput: 0 },
+        DEFAULT_WORKLOAD,
+      ),
+    ).toEqual([free])
+    expect(
+      filterModels([testModel], { ...DEFAULT_FILTERS, provider: 'absent' }, DEFAULT_WORKLOAD),
+    ).toEqual([])
+  })
+  it('does not rank a price as a usable workload when context is exceeded', () => {
+    const tiny = { ...free, context: 100 }
+    expect(
+      filterModels([tiny, testModel], { ...DEFAULT_FILTERS, budget: 1000 }, DEFAULT_WORKLOAD),
+    ).toEqual([testModel])
+  })
   it('does not label non-text output as a free text model', () => {
     expect(
       filterModels(

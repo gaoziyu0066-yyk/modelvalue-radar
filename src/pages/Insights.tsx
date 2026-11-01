@@ -7,6 +7,7 @@ import { estimateCost } from '../lib/cost'
 import { paginate } from '../lib/filter'
 import { Button } from '../components/ui/button'
 import { EmptyCatalog } from '../components/Status'
+import { CostNotes, EstimateDisclaimer } from '../components/CostNotes'
 export default function Insights({
   models,
   workload,
@@ -86,7 +87,25 @@ export default function Insights({
           <div className="panel chart-panel">
             <h3>{t('Monthly cost of your shortlist', '你的候选模型月度成本')}</h3>
             {chosen.length ? (
-              <CostChart models={chosen} workload={workload} />
+              <>
+                <CostChart models={chosen} workload={workload} />
+                <div
+                  className="shortlist-data"
+                  aria-label={t('Shortlist monthly estimates', '候选模型月度估算')}
+                >
+                  {chosen.map((m) => {
+                    const cost = estimateCost(m, workload)
+                    return (
+                      <div key={m.id}>
+                        <strong>{m.name}</strong>
+                        <p>{money(cost.monthly)}</p>
+                        <CostNotes estimate={cost} />
+                      </div>
+                    )
+                  })}
+                </div>
+                <EstimateDisclaimer />
+              </>
             ) : (
               <p className="muted">
                 {t(
@@ -101,7 +120,12 @@ export default function Insights({
             <summary>
               {t('Accessible chart data', '图表数据表')} · {usable.length} {t('models', '个模型')}
             </summary>
-            <div className="table-scroll">
+            <div
+              className="table-scroll"
+              tabIndex={0}
+              role="region"
+              aria-label={t('Scrollable chart data', '可滚动图表数据')}
+            >
               <table className="comparison-table">
                 <thead>
                   <tr>

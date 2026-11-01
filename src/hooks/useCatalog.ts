@@ -5,8 +5,8 @@ export function useCatalog() {
   const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [now, setNow] = useState(() => Date.now())
   const [retryAt, setRetryAt] = useState(0)
+  const [updatedAt, setUpdatedAt] = useState(0)
   const busy = useRef(false)
   const controller = useRef<AbortController | null>(null)
   const retry = useRef(0)
@@ -27,22 +27,26 @@ export function useCatalog() {
       setLoading(false)
       busy.current = false
       setRetryAt(retry.current)
-      setNow(Date.now())
+      setUpdatedAt(Date.now())
     }
   }, [])
   const importFile = async (file: File) => {
     if (busy.current) return
+    busy.current = true
+    setLoading(true)
     setError(null)
     try {
       setCatalog(await importCatalog(file))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Invalid catalog')
+    } finally {
+      busy.current = false
+      setLoading(false)
+      setUpdatedAt(Date.now())
     }
   }
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000)
     return () => {
-      clearInterval(timer)
       controller.current?.abort()
     }
   }, [])
@@ -68,7 +72,7 @@ export function useCatalog() {
     error,
     load,
     importFile,
-    stale: Boolean(catalog && now - Date.parse(catalog.fetchedAt) >= STALE_MS),
-    cooldown: Math.max(0, Math.ceil((retryAt - now) / 1000)),
+    retryAt,
+    updatedAt,
   }
 }

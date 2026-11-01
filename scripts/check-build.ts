@@ -1,13 +1,15 @@
 import { build, preview } from 'vite'
-import { chromium, expect } from '@playwright/test'
+import { chromium, expect, type Browser } from '@playwright/test'
 import { rawTestModel } from '../src/test/fixtures'
 import { DEFAULT_WORKLOAD } from '../src/lib/cost'
+import { shareUrl } from '../src/lib/share'
 // Deployment-path verification. Fixtures are never included in the production bundle.
 const base = '/modelvalue-radar/'
 await build({ base })
 const server = await preview({ base, preview: { host: '127.0.0.1', port: 4180, strictPort: true } })
-const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined })
+let browser: Browser | undefined
 try {
+  browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined })
   const page = await browser.newPage()
   const failures: string[] = []
   page.on('pageerror', (e) => failures.push(e.message))
@@ -17,10 +19,12 @@ try {
   await page.route('https://openrouter.ai/api/v1/models', (route) =>
     route.fulfill({ json: { data: [rawTestModel] } }),
   )
-  const state = encodeURIComponent(
-    JSON.stringify({ v: 1, models: [rawTestModel.id], workload: DEFAULT_WORKLOAD }),
+  await page.goto(
+    shareUrl(
+      { models: [rawTestModel.id], workload: DEFAULT_WORKLOAD },
+      `http://127.0.0.1:4180${base}`,
+    ),
   )
-  await page.goto(`http://127.0.0.1:4180${base}?s=${state}#compare`)
   await page.getByRole('button', { name: 'Load official catalog', exact: true }).click()
   await expect(page.locator('.comparison-table')).toContainText('$900.00')
   await expect(page.locator('.chart .recharts-wrapper')).toHaveCount(2)
@@ -34,7 +38,7 @@ try {
     'PASS: production subpath assets, lazy chunks, shared state, navigation and reload; no HTTP/page errors.',
   )
 } finally {
-  await browser.close()
+  await browser?.close()
   await new Promise<void>((resolve, reject) =>
     server.httpServer.close((error) => (error ? reject(error) : resolve())),
   )

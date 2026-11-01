@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — engineering review, 2026-11-01
+
+- Fix import/refresh races, timer-driven full-page rerenders, tiny-price underflow, per-million overflow and small nonzero currency display.
+- Keep unverified import provenance and model-specific warnings in copied comparisons; add accessible shortlist costs independent of scatter filters.
+- Use private-to-host URL fragments for new shares, preserve legacy links, restore same-tab shares, and suppress referrers.
+- Fix tablet overflow and large-cost presentation; expose keyboard-scrollable tables, localized titles, route focus and field validity.
+- Populate modality/parameter filters from actual catalog metadata and keep non-text/unknown-price models selectable with explicit reasons.
+- Extend browser coverage to 375px, 768px and 1440px, all five pages in both themes, malicious imports, fragment privacy, extreme inputs and chart lazy loading.
+- Add deployment failure artifacts, explicit Pages read permission for metadata lookup and a main-branch deployment guard.
+
 ## 1.0.0 — 2026-11-01
 
 Initial local release; not yet published to a remote repository or live host.

@@ -27,6 +27,10 @@ Actual running product with an official OpenRouter response, not a mockup. Scree
 
 Dark by default; light mode and English/Chinese are supported. Mobile model rows reorganize into readable labeled lists. Keyboard focus, semantic tables, native modal focus management, skeletons, errors and reduced-motion behavior are included.
 
+The release-readiness review adds exact 375px / 768px / 1440px browser coverage, import concurrency protection, precise small-cost display, and keyboard-scrollable tables. See the [engineering review and remaining release gates](docs/ENGINEERING_REVIEW.zh-CN.md).
+
+New share links put IDs and workload in the URL fragment (`#compare?s=…`), so those values are not sent to the static host. Legacy query links remain supported and can appear in hosting logs. All share links remain visible to recipients and browser history. Imported comparison exports explicitly retain their unverified provenance and calculation warnings.
+
 **Price rankings are not capability rankings.** The project ships no benchmark scores or fabricated price history. Scenario results are _matching candidates_, not claims of best quality.
 
 ## Run locally
