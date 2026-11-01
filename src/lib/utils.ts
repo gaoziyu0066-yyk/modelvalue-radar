@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 export const compact = (value: number) =>
   new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value)
 export const money = (value: number | null, digits = 2) =>
-  value === null
+  value === null || !Number.isFinite(value)
     ? '—'
     : new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -14,8 +14,16 @@ export const money = (value: number | null, digits = 2) =>
         minimumFractionDigits: digits,
         maximumFractionDigits: digits,
       }).format(value)
-export const tokenPrice = (value: number | null) =>
-  value === null ? '—' : money(value * 1e6, value > 0 && value * 1e6 < 0.01 ? 4 : 2)
+export function tokenPrice(value: number | null) {
+  if (value === null) return '—'
+  const perMillion = value * 1e6
+  if (!Number.isFinite(perMillion)) return '—'
+  if (perMillion > 0 && perMillion < 1e-8) return `$${perMillion.toExponential(2)}`
+  return money(
+    perMillion,
+    perMillion > 0 && perMillion < 0.01 ? Math.max(4, Math.ceil(-Math.log10(perMillion)) + 1) : 2,
+  )
+}
 export function safeRead(key: string, fallback: string) {
   try {
     return localStorage.getItem(key) ?? fallback

@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_WORKLOAD, estimateCost, savings } from './cost'
 import { testModel } from '../test/fixtures'
 describe('independent cost examples', () => {
+  it('rejects numeric overflow rather than showing an infinite bill', () => {
+    expect(
+      estimateCost(
+        { ...testModel, pricing: { ...testModel.pricing, input: 1e305 } },
+        DEFAULT_WORKLOAD,
+      ).reason,
+    ).toBe('numericOverflow')
+  })
   it('1000 users × 5 calls × 30 days at $2/$8 per million = $900/month', () => {
     const cost = estimateCost(testModel, DEFAULT_WORKLOAD)
     expect(cost.perCall).toBeCloseTo(0.006, 12)

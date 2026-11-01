@@ -5,7 +5,7 @@ export function useCatalog() {
   const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
   const [retryAt, setRetryAt] = useState(0)
   const busy = useRef(false)
   const controller = useRef<AbortController | null>(null)

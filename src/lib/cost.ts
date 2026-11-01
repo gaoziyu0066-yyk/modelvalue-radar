@@ -19,7 +19,12 @@ export const DEFAULT_WORKLOAD: Workload = {
 export type CostWarning =
   'cacheUnknown' | 'requestUnknown' | 'extraFees' | 'contextUnknown' | 'freeLimits'
 export type CostUnavailable =
-  'invalidWorkload' | 'nonText' | 'missingPrice' | 'contextExceeded' | 'outputExceeded'
+  | 'invalidWorkload'
+  | 'nonText'
+  | 'missingPrice'
+  | 'contextExceeded'
+  | 'outputExceeded'
+  | 'numericOverflow'
 export interface Estimate {
   perCall: number | null
   dailyCalls: number
@@ -66,12 +71,18 @@ export function estimateCost(model: Model, workload: Workload): Estimate {
   const perCall = input + workload.output * model.pricing.output + (model.pricing.request ?? 0)
   const daily = perCall * dailyCalls
   const monthly = daily * workload.days
+  if (![perCall, daily, monthly, monthly * 12].every(Number.isFinite))
+    return unavailable('numericOverflow')
   return { perCall, dailyCalls, monthlyCalls, daily, monthly, annual: monthly * 12, warnings }
 }
 /** Free text pricing is not a claim about tools, quota, or availability. */
 export function isFree(model: Model) {
   return (
-    model.pricing.input === 0 && model.pricing.output === 0 && (model.pricing.request ?? 0) === 0
+    model.inputModalities.includes('text') &&
+    model.outputModalities.includes('text') &&
+    model.pricing.input === 0 &&
+    model.pricing.output === 0 &&
+    (model.pricing.request ?? 0) === 0
   )
 }
 export function savings(baseline: number | null, alternative: number | null) {

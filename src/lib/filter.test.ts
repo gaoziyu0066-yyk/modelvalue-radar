@@ -9,6 +9,15 @@ const free = {
 }
 const unknown = { ...testModel, id: 'test/unknown', pricing: { ...testModel.pricing, input: null } }
 describe('filters and deterministic ranking', () => {
+  it('does not label non-text output as a free text model', () => {
+    expect(
+      filterModels(
+        [{ ...free, outputModalities: ['image'] }],
+        { ...DEFAULT_FILTERS, free: true },
+        DEFAULT_WORKLOAD,
+      ),
+    ).toEqual([])
+  })
   it('ranks free, known-price, unknown in that order', () =>
     expect(
       filterModels([unknown, testModel, free], DEFAULT_FILTERS, DEFAULT_WORKLOAD).map((m) => m.id),
