@@ -62,3 +62,13 @@
 - Final checks: 94 unit/component tests passed; 72 E2E tests passed across exact 375px, 768px and 1440px widths; all-five-page dark/light axe scans passed. Cost lines 100%, lib lines 93.19%.
 - Production build and Pages subpath smoke passed. Live source check: 452 models, zero rejected. Full dependency audit: zero reported vulnerabilities.
 - Added `docs/ENGINEERING_REVIEW.zh-CN.md` and four explicitly synthetic review screenshots. Public source permissions, real hosted deployment, Safari/Firefox/physical devices and human screen-reader validation remain external release gates. No remote push or deployment performed.
+
+## Open-source launch preparation — 2026-11-01
+
+- Rewrote English/Chinese READMEs with a short value proposition, immediate Quick Start, first-use flow, real captures and explicit current limits. Added setup/troubleshooting and a separate formula/architecture reference.
+- Refreshed and inspected six real API screenshots; provided a 90-second recording guide without claiming a generated video/GIF.
+- Prepared Description/Topics, v0.1.0 release notes, Reddit/V2EX drafts, an HN author brief respecting its generated-text rule, three scoped good-first-issue drafts and a complete Pages launch/rollback checklist.
+- Aligned package/lockfile/security/changelog to the requested first public version 0.1.0; the prior 1.0.0 marker was local and unpublished. No tag was created.
+- Restored standard MIT license text; documented separate data/media/dependency rights. Generated complete license/NOTICE texts for 50 locked production entries and added stale/version/license checks to CI and Pages. No runtime dependency was added or upgraded.
+- Lint, 94 tests, root production build, Pages browser smoke and license asset checks passed. Stale-notice failure injection rejected altered output and passed after byte-for-byte restoration. Current audit reported zero vulnerabilities. Full 72-case E2E and coverage figures remain the separately dated engineering-review evidence.
+- `docs/launch/VALIDATION.md` distinguishes new checks, prior evidence and external gaps. No remote push, external post, GitHub issue, release or deployment was performed.

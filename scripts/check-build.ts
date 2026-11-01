@@ -16,6 +16,14 @@ try {
   page.on('response', (r) => {
     if (r.status() >= 400) failures.push(`${r.status()} ${r.url()}`)
   })
+  const notices = await page.request.get(`http://127.0.0.1:4180${base}third-party-licenses.txt`)
+  expect(notices.status()).toBe(200)
+  expect(notices.headers()['content-type']).toContain('text/plain')
+  const noticeText = await notices.text()
+  expect(noticeText).toContain('ModelValue Radar — third-party dependency notices')
+  expect(noticeText).toContain('recharts@')
+  expect(noticeText).toContain('class-variance-authority@')
+  expect(noticeText).toContain('--- NOTICE')
   await page.route('https://openrouter.ai/api/v1/models', (route) =>
     route.fulfill({ json: { data: [rawTestModel] } }),
   )
@@ -35,7 +43,7 @@ try {
   expect(new URL(page.url()).pathname).toBe(base)
   expect(failures).toEqual([])
   console.log(
-    'PASS: production subpath assets, lazy chunks, shared state, navigation and reload; no HTTP/page errors.',
+    'PASS: production subpath assets, dependency license/NOTICE text, lazy chunks, shared state, navigation and reload; no HTTP/page errors.',
   )
 } finally {
   await browser?.close()

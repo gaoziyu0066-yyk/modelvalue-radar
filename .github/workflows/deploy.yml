@@ -25,6 +25,7 @@ jobs:
       - uses: actions/configure-pages@v5
         id: pages
       - run: npm ci
+      - run: npm run licenses:check
       - run: npm run format:check
       - run: npm run lint
       - run: npm test

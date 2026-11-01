@@ -2,173 +2,92 @@
 
 **Find the best AI model for your budget.**
 
-A free, open-source **AI Model Comparison & Cost Calculator** for developers, students, and AI enthusiasts. Discover models, estimate an application budget, and compare up to three options using transparent assumptions.
+Compare AI model prices **for the app you actually plan to build**. Enter your users, calls and token usage, then see monthly estimates and compare up to three candidates side by side.
 
-[简体中文](README.zh-CN.md) · [Contributing](CONTRIBUTING.md) · [Data policy](docs/DATA_POLICY.md) · [Security](SECURITY.md)
+- **Budget with your workload:** input/output tokens, cache hit rate, daily/monthly/yearly costs and savings.
+- **Narrow the shortlist:** search, price/context/modality filters and six transparent use-case filters.
+- **Share the decision:** comparison tables, charts and a link containing model IDs and workload.
+- **Run it yourself:** static React app; no login, database, API key or paid inference call required under the observed public catalog access.
 
-**Online demo placeholder:** `https://YOUR_USERNAME.github.io/modelvalue-radar/` — not yet published. Replace this after your own deployment. There is no account, database, API key, paid service, or inference call required by the application.
+[简体中文](README.zh-CN.md) · [Quick Start](#quick-start) · [Screenshots](#see-it-in-action) · [Contribute](CONTRIBUTING.md) · [Data policy](docs/DATA_POLICY.md)
 
-![ModelValue Radar — actual desktop capture](docs/screenshots/explore-dark.png)
+**Status:** v0.1.0 is prepared locally; no public release or hosted demo has been published yet. Use the local Quick Start below.
 
-Actual running product with an official OpenRouter response, not a mockup. Screenshots capture a moment in time and are not current pricing guarantees. [Capture provenance and more screenshots](docs/screenshots/README.md).
+## Quick Start
 
-## What you can do
-
-| Tool                 | Behavior                                                                                                                                                 |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Discover             | Search; combine provider, modality, parameter, context, input/output price and monthly-budget filters; paginate results.                                 |
-| Rank                 | Lowest input/output price, free text tokens, newest catalog entries, longest context, or lowest cost for **your** workload.                              |
-| Calculate            | Daily users, calls/user/day, input/output tokens, active days and input-cache ratio → per-call, daily, monthly and yearly USD estimates.                 |
-| Compare              | Up to three models, token-price bars, monthly-cost bars, capability declarations, complete parameter lists and relative savings.                         |
-| Find candidates      | Coding, chat, long documents, structured text processing, image understanding and budget-first hard filters. Adjustable cost/context preference weights. |
-| Explore prices       | Interactive input/output scatter plot, price ceiling and accessible data table.                                                                          |
-| Share                | Versioned links with model IDs and workload; copy results, with a manual clipboard fallback.                                                             |
-| Understand freshness | Last successful retrieval, six-hour stale warning, refresh errors and explicit unknown prices.                                                           |
-
-Dark by default; light mode and English/Chinese are supported. Mobile model rows reorganize into readable labeled lists. Keyboard focus, semantic tables, native modal focus management, skeletons, errors and reduced-motion behavior are included.
-
-The release-readiness review adds exact 375px / 768px / 1440px browser coverage, import concurrency protection, precise small-cost display, and keyboard-scrollable tables. See the [engineering review and remaining release gates](docs/ENGINEERING_REVIEW.zh-CN.md).
-
-New share links put IDs and workload in the URL fragment (`#compare?s=…`), so those values are not sent to the static host. Legacy query links remain supported and can appear in hosting logs. All share links remain visible to recipients and browser history. Imported comparison exports explicitly retain their unverified provenance and calculation warnings.
-
-**Price rankings are not capability rankings.** The project ships no benchmark scores or fabricated price history. Scenario results are _matching candidates_, not claims of best quality.
-
-## Run locally
-
-Prerequisite: Node.js **22.13+**, preferably Node 24, with npm installed and available in your terminal.
+Install **Node.js 24 LTS with npm** (Node 22.13+ on the 22.x line also works). Download/extract this repository or clone it using the URL of your own fork. Open the folder containing `package.json`:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/modelvalue-radar.git
-cd modelvalue-radar
-npm install
+npm ci
 npm run dev
 ```
 
-Use the localhost URL printed by Vite. Click **Load official catalog** to make one direct request to OpenRouter, or **Import JSON** to use a catalog you have permission to use. The initial empty state is intentional: no third-party catalog is silently bundled, mirrored, or replaced with fake data.
+Open the local URL printed by Vite, then:
+
+1. Click **Load official catalog**. The initial empty state is intentional: no model data is silently bundled.
+2. Open **Calculator** and enter your users, calls and token usage.
+3. Add up to three models in **Explore**, then open **Compare** and copy a share link.
+
+The source request needs internet access. If it fails, the app explains the error and supports **Import JSON** for data you have permission to use. It does not substitute invented prices. [Setup, troubleshooting and the local npm fallback →](docs/QUICK_START.md)
+
+## See it in action
+
+![Model discovery with actual source data, dark theme](docs/screenshots/explore-dark.png)
+
+These are real browser captures, not design mockups. Prices are dated observations, not current guarantees. [Capture time and provenance](docs/screenshots/README.md) · [All six images](docs/launch/MEDIA_GUIDE.md#available-images).
+
+| Compare candidates                                                                | Plan a workload                                                                        |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [![Model comparison](docs/screenshots/compare.png)](docs/screenshots/compare.png) | [![Cost calculator](docs/screenshots/calculator.png)](docs/screenshots/calculator.png) |
+
+[Light theme](docs/screenshots/explore-light.png) · [Chinese mobile view](docs/screenshots/mobile-zh.png) · [Recording walkthrough](docs/launch/MEDIA_GUIDE.md)
+
+## What the numbers mean
+
+**Price ranking is not quality ranking.** Scenario filters return matching candidates using declared modalities, API parameters and context limits. There are no invented capability scores, benchmark results or price histories.
+
+```text
+Per call = input × [(1 − cache hit rate) × input price + cache hit rate × cache-read price]
+           + output × output price + known request fee
+Monthly  = per-call cost × daily users × calls/user/day × days/month
+Annual   = monthly × 12
+```
+
+Rates in this formula are USD/token; UI token prices are USD per million. Missing/dynamic prices stay unavailable. Unknown cache pricing falls back to ordinary input pricing with a warning. Context/output limits are checked. Free token pricing can still have quotas and availability limits.
+
+This is a **text-token estimate, not a bill**. Cache writes, tiers/long-context premiums, media, tools, taxes, platform fees and provider-routing differences are excluded. [Formula, test examples and architecture →](docs/REFERENCE.md)
+
+## Data, freshness and privacy
+
+- The default provider reads the [official OpenRouter models API](https://openrouter.ai/docs/api/api-reference/models/list-all-models-and-their-properties) only after you load it. No full catalog, persistent cache or server mirror is shipped.
+- “Retrieved” means receipt in your tab, **not when a price changed**. A visible tab refreshes after six hours; failures preserve the last successful data. Imports have unverified source age and are not automatically replaced.
+- Calculations/imports run locally. Only language and theme use local storage; there is no analytics or login. OpenRouter receives connection metadata for direct source requests.
+- New share URLs keep IDs/workload in the `#` fragment, away from hosting query logs. Recipients and browser history can still see them. Old query links are compatible but may have been logged. Links reload current data; they do not freeze prices.
+- A separate six-hour Actions health check is **off by default**. It records status metadata, never publishes a catalog or redeploys the site.
+
+Public API access is not permission to redistribute data. Before operating a public integration or promoting screenshots, review [source terms](https://openrouter.ai/terms), our [data policy](docs/DATA_POLICY.md) and [third-party notices](THIRD_PARTY_NOTICES.md). Broad catalog redistribution rights have not been established.
+
+## Develop and deploy
+
+React + TypeScript + Vite, Tailwind CSS, local shadcn/ui-style Radix/CVA primitives, Recharts, Lucide and Zod. Vitest/Testing Library cover logic; Playwright/axe cover browser flows. Charts and secondary pages are lazy-loaded; hash navigation supports GitHub Pages subpaths.
 
 ```bash
-npm run build         # TypeScript checks + production output in dist/
-npm run preview       # Local production preview, not a production server
 npm run lint
-npm run format:check
 npm test
-npm run test:coverage
-npx playwright install chromium
-npm run test:e2e
-npm run test:build    # Builds and smoke-tests a /modelvalue-radar/ deployment
+npm run build          # dist/; TypeScript checked first
+npm run preview        # local production preview
 ```
 
-For a locked, reproducible install use `npm ci`. `.env.example` lists public configuration; copy it to `.env` only if you need a custom base path. **Every `VITE_` value is public. Never put keys in one.**
+The 2026-11-01 local review recorded **94 unit/component tests** and **72 browser tests** passing at 375px, 768px and 1440px. These are reproducible checks, not usage metrics or universal compatibility claims. [Review and limitations](docs/ENGINEERING_REVIEW.zh-CN.md) · [Full test commands](CONTRIBUTING.md).
 
-If Playwright browser downloads are restricted, an installed Edge can be used locally:
+GitHub Pages deployment is configured, but has **not run remotely**. For your own deployment, put this project at the repository root, select **Settings → Pages → GitHub Actions**, and follow the [complete launch checklist](docs/launch/GITHUB_PAGES_CHECKLIST.md). It covers data rights, first deployment, smoke testing, rollback and release approval. Never place secrets in `VITE_` variables.
 
-```powershell
-$env:PLAYWRIGHT_CHANNEL = 'msedge'
-npm run test:e2e
-```
+## Contribute
 
-This fallback is optional; CI downloads standard Chromium. On a restricted corporate network, configure trusted proxy and CA settings for Node/browser tools rather than disabling certificate checks. The website will show a clear source error if OpenRouter cannot be reached; local import remains usable.
+Start with one of [three scoped beginner tasks](docs/good-first-issues/README.md): accessible input hints, request-fee details, or Escape-to-clear search. These are ready-to-file issue drafts, not already-open GitHub issues. English and Chinese contributions are welcome. [Contribution guide](CONTRIBUTING.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Security reporting](SECURITY.md).
 
-## Cost math
+Next: real-device/browser audits, better endpoint/tier estimates, and authorized snapshot providers. Benchmark rankings or history will be added only with verifiable data and permission. [v0.1.0 release draft](docs/releases/v0.1.0.md) · [Changelog](CHANGELOG.md).
 
-All internal rates are **USD per token**; displayed token prices are multiplied by 1,000,000.
+## License
 
-```text
-C = I × [(1 − h) × Pi + h × Pc] + O × Po + R
-Daily calls   = U × N
-Monthly calls = U × N × D
-Daily cost    = C × U × N
-Monthly cost  = C × U × N × D
-Annual cost   = Monthly cost × 12
-Savings       = baseline monthly cost − candidate monthly cost
-```
-
-`I/O`: input/output tokens per call; `h`: input-cache ratio; `Pi/Po`: input/output rates; `Pc`: cache-read rate; `R`: known per-request fee; `U`: daily users; `N`: calls/user/day; `D`: modeled days/month.
-
-Independent test example: 1,000 users × 5 calls × 30 days, with 1,000 input and 500 output tokens at **test-only** rates $2/$8 per million, costs **$900/month**. A 50% cache ratio at a $0.50/M read rate gives **$787.50/month**. These are math fixtures, not advertised model prices.
-
-- Missing/dynamic prices return unavailable, not zero. Non-text output is not estimated.
-- Missing cache-read prices use the normal input rate with a warning; no invented discount.
-- Unknown request fees are assumed zero with a warning.
-- Known context/output overflow blocks estimates; unknown context is flagged.
-- Structured tier overrides and additional price fields are retained as exclusions, not silently flattened into a false exact bill.
-- Cache writes, tier/long-context premiums, media, tools, taxes, platform fees and routing differences are excluded. Include billed reasoning tokens in output usage when applicable. Annual cost means 12 modeled months, not necessarily 365 days. Free tokens can have quota/availability limits.
-
-## Data source and rights
-
-The default adapter uses the [official OpenRouter models API](https://openrouter.ai/docs/api/api-reference/models/get-models), at `https://openrouter.ai/api/v1/models`. During implementation, anonymous HTTP 200 and browser CORS access were observed; the generated reference also describes bearer authentication. **Observed public access is not a redistribution license or a guarantee of future anonymous access.** No key is embedded, requested or stored.
-
-Review the [source terms](https://openrouter.ai/terms), [limits documentation](https://openrouter.ai/docs/api-reference/limits), and [detailed data policy](docs/DATA_POLICY.md) before operating a public integration. A clear blanket right to mirror/redistribute the entire catalog was not established, so the repository contains **no production catalog snapshot**, server mirror, or catalog commits. Browsers load on request and keep the result in memory. There is no persistent catalog cache or full-catalog export. Local imports remain on the device and are labeled with unverified source age.
-
-“Retrieved” records successful receipt in this tab. It is **not the actual price-change time**. A model's `created` timestamp is catalog creation, not necessarily release date. The ID prefix labels a model author, not the routed inference provider. “Supported” means advertised by the source, not an independently measured guarantee. Imported records are not independently verified.
-
-The code uses MIT. **Third-party data, trademarks and any future benchmark datasets are not relicensed under MIT.** Test fixtures are synthetic, explicitly named `TEST ONLY`, and never served as production models. No Demo Data is shipped.
-
-## Refresh and scheduled checks
-
-- After the visitor loads the source, a **visible open tab** checks whether data is at least six hours old and then refreshes. Closed/hidden tabs do not poll. This is periodic retrieval, not second-by-second pricing.
-- Failed refreshes retain the previous catalog and show an error/stale warning. Requests have a one-minute minimum cooldown and honor longer `Retry-After` values. There is no automatic immediate retry loop.
-- `.github/workflows/check-data.yml` provides `workflow_dispatch` plus `17 */6 * * *` (UTC). It is **opt-in**: after reviewing usage rights, set repository **Actions variable** `ENABLE_CATALOG_CHECK=true`.
-- The check validates a response in memory and uploads only status, counts, time, and failure reason as a 30-day artifact. The Actions summary shows each result; earlier successful runs record the last successful check. It never commits a directory, changes the current website, or triggers a deploy. No data means no repetitive data commits.
-- The browser timestamp and CI health-check timestamp describe separate requests. They are deliberately not conflated.
-- Without the repository variable, the scheduled job is skipped. Manual browser refresh/import works independently. Future authorized snapshots can be introduced through the `DataProvider` interface after permission, schema, retention and failure behavior are documented.
-
-Local health check (explicit opt-in; no snapshot written):
-
-```powershell
-$env:CATALOG_CHECK_ENABLED = 'true'
-npm run check:data
-```
-
-## Architecture
-
-React + strict TypeScript + Vite; Tailwind CSS 4; local shadcn/ui-style Radix/CVA button primitives; Recharts; Lucide; Zod runtime validation; Vitest + React Testing Library; Playwright + axe; GitHub Actions and Pages.
-
-Native labeled inputs/selects and the native modal dialog keep keyboard behavior simple. No router package is needed: hash navigation works under GitHub Pages without rewrite rules. Charts and secondary pages are lazy-loaded; system fonts avoid a third-party font request. Only theme/language use local storage.
-
-```text
-src/
-  components/       # Shared controls, charts, statuses, detail dialog
-    ui/             # Locally owned shadcn/ui-style primitives
-  pages/            # Explore, Calculator, Compare, Insights, Methodology
-  hooks/            # Catalog lifecycle, language, cost warnings
-  lib/              # Pure math/filter/share logic + data-provider boundary
-  types/            # Normalized model, catalog and workload types
-  test/             # Test-only fixtures and setup
-scripts/            # Metadata-only source check and real screenshot capture
-tests/e2e/          # Deterministic browser flows with synthetic API fixtures
-docs/               # Data policy, screenshots, validation notes
-.github/            # CI, Pages, optional catalog check, contribution templates
-```
-
-## Deploy to GitHub Pages
-
-1. Create your own **public** GitHub repository named `modelvalue-radar`. Review source terms before making a public integration available. No repository has been created or pushed by this local delivery.
-2. Upload this **project directory as the repository root**, including `package-lock.json` and `.github/`. Do not upload `node_modules`, `.tooling`, parent workspace files, `.env`, `dist` or local imports.
-3. In **Settings → Pages → Build and deployment**, choose **GitHub Actions**. Set the `github-pages` environment to allow deployment from `main` only.
-4. Push your reviewed `main` branch, or run **Deploy GitHub Pages** manually. The workflow checks lint/tests, builds, uploads `dist`, then deploys. A failed build cannot replace the previous deployment.
-5. The workflow obtains `base_path` from `actions/configure-pages`, so project URLs, user sites and custom domains use the appropriate asset path. Hash routes and query-based share state stay under that path.
-6. Replace the demo placeholder here and in the Chinese README with the resulting URL. Optional: enable the catalog health-check variable described above and private vulnerability reporting.
-
-For manual project-path builds, set `VITE_BASE_PATH=/modelvalue-radar/` before `npm run build` (PowerShell: `$env:VITE_BASE_PATH='/modelvalue-radar/'`). Use `/` for a custom domain. See the official [Vite static-deployment guide](https://vite.dev/guide/static-deploy) and [GitHub Pages workflow guide](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
-
-CI tests code and mocked flows without consuming the model API. Real source checking is a separate opt-in workflow. Scheduled Actions can be delayed or disabled by GitHub; they are not an uptime guarantee. Remote workflows and actual publication need your GitHub account and have not been executed by this local delivery.
-
-## Validation and limitations
-
-See [VALIDATION.md](docs/VALIDATION.md) for actual commands/results and known environment limits. Browser tests cover desktop and a mobile viewport using a Chromium engine; automated axe checks are a useful baseline, not a claim of universal accessibility conformance. No real iOS/Android device or production GitHub environment is claimed to have been tested.
-
-Source availability, metadata correctness, price tiers and permissions remain upstream constraints. No offline production dataset, capability benchmark, or price trend is invented to hide those limits. Shared links intentionally reload current data rather than freeze prices.
-
-## Contribute and roadmap
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Small, well-tested fixes, translation improvements, accessibility reviews and documented provider adapters are welcome.
-
-- [ ] Written authorization for redistributable, versioned catalog snapshots.
-- [ ] Provider endpoint / long-context tier and cache-write-aware estimates.
-- [ ] A licensed benchmark integration with metric/version attribution.
-- [ ] Real-device and additional-browser accessibility testing.
-- [ ] Historical trends **only** after real, permitted snapshots exist.
-- [ ] More currencies using a documented exchange-rate source and date.
-
-See [CHANGELOG.md](CHANGELOG.md) for release notes. The project is independent and not affiliated with OpenRouter or model providers.
+Original code and documentation: [MIT](LICENSE). Dependencies, third-party model data, brands and source-data screenshots keep their own rights; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Independent project, not affiliated with OpenRouter or model providers.

@@ -1,6 +1,6 @@
 # Security policy
 
-The current 1.x release line receives fixes. This is a static frontend with no login, secrets, database, server-side catalog mirror or inference calls.
+The current development target is the 0.1.x release line; v0.1.0 is prepared locally and not yet published. This is a static frontend with no login, secrets, database, server-side catalog mirror or inference calls.
 
 ## Reporting
 

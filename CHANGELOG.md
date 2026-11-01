@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased — engineering review, 2026-11-01
+## 0.1.0 — prepared locally, not released
+
+This is the intended first public version. An earlier `1.0.0` development marker was never published or tagged; it has been normalized to `0.1.0`. The entries below describe implemented work as of 2026-11-01, not a GitHub release event.
+
+### Open-source launch preparation
+
+- Rewrite English/Chinese READMEs around value, Quick Start, current features and verifiable limits.
+- Refresh six real API screenshots; add provenance and a 90-second recording guide.
+- Prepare repository metadata, release notes, community materials, three scoped starter issues and a complete Pages checklist as local drafts.
+- Restore the standard MIT text and document separate dependency/data/media rights. Include locked production dependency license/NOTICE texts in builds with generation and CI/deployment checks.
+
+### Engineering review
 
 - Fix import/refresh races, timer-driven full-page rerenders, tiny-price underflow, per-million overflow and small nonzero currency display.
 - Keep unverified import provenance and model-specific warnings in copied comparisons; add accessible shortlist costs independent of scatter filters.
@@ -10,9 +21,7 @@
 - Extend browser coverage to 375px, 768px and 1440px, all five pages in both themes, malicious imports, fragment privacy, extreme inputs and chart lazy loading.
 - Add deployment failure artifacts, explicit Pages read permission for metadata lookup and a main-branch deployment guard.
 
-## 1.0.0 — 2026-11-01
-
-Initial local release; not yet published to a remote repository or live host.
+### Initial implementation
 
 - Model discovery with search, provider/modality/parameter/budget filters, pagination and transparent cost/context rankings.
 - Runtime-validated OpenRouter provider, local JSON import, per-session retrieval timestamps, errors and stale-data warnings.

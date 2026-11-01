@@ -19,8 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-Scope: this license covers original project code and documentation. Third-party
-model data, brand names, trademarks, provider materials, screenshots containing
-third-party data, and benchmark datasets retain their respective rights and are
-not relicensed under MIT by this project. Dependency licenses apply separately.
