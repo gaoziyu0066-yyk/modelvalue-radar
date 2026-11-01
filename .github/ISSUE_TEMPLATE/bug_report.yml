@@ -1,0 +1,27 @@
+name: Bug report / 问题反馈
+description: Report a reproducible UI, calculation or data parsing issue.
+title: '[Bug] '
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened? / 发生了什么？
+      description: Describe the behavior and the expected result. Do not include secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction / 复现步骤
+      description: Include page, filters, model ID and workload if relevant. Do not attach an entire third-party catalog.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser, OS and screen size / 浏览器、系统及屏幕尺寸
+  - type: textarea
+    id: source
+    attributes:
+      label: Data source and retrieval time / 数据来源与获取时间
+      description: Use a public source URL for pricing issues; prices can vary by provider and tier.

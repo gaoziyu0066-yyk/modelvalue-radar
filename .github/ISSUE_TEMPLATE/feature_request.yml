@@ -1,0 +1,18 @@
+name: Feature request / 功能建议
+description: Propose a useful, focused improvement.
+title: '[Feature] '
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: User problem / 用户问题
+      description: What decision or workflow would this improve?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed behavior / 预期行为
+      description: For new data, include the official API and explicit display/redistribution permission.
+    validations:
+      required: true

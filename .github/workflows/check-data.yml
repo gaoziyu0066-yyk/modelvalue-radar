@@ -1,0 +1,33 @@
+name: Catalog health check (opt-in)
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: catalog-check
+  cancel-in-progress: false
+jobs:
+  check:
+    if: vars.ENABLE_CATALOG_CHECK == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Validate the official API without saving model data
+        run: npm run check:data
+        env:
+          CATALOG_CHECK_ENABLED: 'true'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: catalog-health-${{ github.run_id }}
+          path: data-check.json
+          retention-days: 30
+          if-no-files-found: warn
