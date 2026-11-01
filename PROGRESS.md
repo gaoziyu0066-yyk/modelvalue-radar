@@ -50,5 +50,6 @@
 - CI and deployment check lint/tests/browser flows and build; opt-in six-hour health check writes metadata artifacts only.
 - All three workflow files parsed as valid YAML. No remote repository, push, or deployment has been performed.
 - Added a detailed verification record with real test counts, source-check evidence, failures/fixes and local browser/network limitations.
-- Project remains in its original selected workspace; switching the chat's current directory did not automatically move an existing repository.
+- Initially retained the original workspace when the chat directory changed. On the user's subsequent explicit instruction, moved the complete repository and its sibling `.tooling` directory to `D:\OneDrive\Documents\ChatGPT\My GitHub`. File inventories and sizes matched before and after the move; the original project and tooling directories are absent. Existing mathematics materials were preserved.
 - Final production-subpath check and local documentation-link checks passed; staged implementation and test changes were saved in local Git commits. Formatting and whitespace checks passed before release packaging.
+- After relocation, production build and all 64 unit/component tests passed again; `git fsck --full` passed. No project references were found in the remaining mathematics files.
